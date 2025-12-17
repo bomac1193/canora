@@ -1,26 +1,195 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* CANORA Color System - Institutional, Archival, Editorial */
+  /* No dark mode - this is a timeless, archival system */
+
+  /* Base Palette */
+  --background: #F6F2EA;
+  --foreground: #111111;
+  --secondary: #5A5A5A;
+  --secondary-foreground: #111111;
+  --divider: #D8D2C8;
+
+  /* Status Accents - The Three States */
+  --canon: #4A0E1A;
+  --plate: #0C2340;
+  --jam: #1F2A1F;
+
+  /* UI Components */
+  --card: #FDFBF7;
+  --card-foreground: #111111;
+  --popover: #FDFBF7;
+  --popover-foreground: #111111;
+  --primary: #111111;
+  --primary-foreground: #F6F2EA;
+  --muted: #F0EBE1;
+  --muted-foreground: #5A5A5A;
+  --accent: #F0EBE1;
+  --accent-foreground: #111111;
+  --destructive: #8B2635;
+  --border: #D8D2C8;
+  --input: #D8D2C8;
+  --ring: #4A0E1A;
+
+  /* Radius - Minimal, institutional */
+  --radius: 0.25rem;
+
+  /* Sidebar (using institutional palette) */
+  --sidebar: #F0EBE1;
+  --sidebar-foreground: #111111;
+  --sidebar-primary: #111111;
+  --sidebar-primary-foreground: #F6F2EA;
+  --sidebar-accent: #D8D2C8;
+  --sidebar-accent-foreground: #111111;
+  --sidebar-border: #D8D2C8;
+  --sidebar-ring: #4A0E1A;
+
+  /* Charts (muted, archival tones) */
+  --chart-1: #4A0E1A;
+  --chart-2: #0C2340;
+  --chart-3: #1F2A1F;
+  --chart-4: #5A5A5A;
+  --chart-5: #D8D2C8;
 }
 
 @theme inline {
+  /* Core colors */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-divider: var(--divider);
+
+  /* Status accents */
+  --color-canon: var(--canon);
+  --color-plate: var(--plate);
+  --color-jam: var(--jam);
+
+  /* UI components */
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Sidebar */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Charts */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Radius - institutional, minimal */
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 6px);
+  --radius-3xl: calc(var(--radius) + 8px);
+  --radius-4xl: calc(var(--radius) + 10px);
+
+  /* Typography */
+  --font-serif: var(--font-cormorant);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Base Styles */
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Typography Classes */
+.font-serif {
+  font-family: var(--font-serif), Georgia, serif;
+}
+
+.font-sans {
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.font-mono {
+  font-family: var(--font-mono), monospace;
+}
+
+/* Status Badge Variants */
+.status-canon {
+  background-color: var(--canon);
+  color: #F6F2EA;
+}
+
+.status-plate {
+  background-color: var(--plate);
+  color: #F6F2EA;
+}
+
+.status-jam {
+  background-color: var(--jam);
+  color: #F6F2EA;
+}
+
+/* Institutional Dividers */
+.divider {
+  border-color: var(--divider);
+}
+
+/* Selection styling - Canon oxblood */
+::selection {
+  background-color: var(--canon);
+  color: #F6F2EA;
+}
+
+/* Focus states - institutional, not playful */
+:focus-visible {
+  outline: 2px solid var(--canon);
+  outline-offset: 2px;
+}
+
+/* Scrollbar styling for archival feel */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--muted);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--divider);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--secondary);
 }

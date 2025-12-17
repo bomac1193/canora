@@ -1,0 +1,240 @@
+// CANORA - Cultural Decision System
+// Prisma Schema for Institutional Music Archive
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum Role {
+  VIEWER    // Can view Canon Archive, Curated Lists, Work pages
+  CREATOR   // Can create Works (JAM), add Contributions, create forks
+  CURATOR   // Can promote JAM→PLATE→CANON, create Curated Lists
+  ADMIN     // Can manage roles
+}
+
+enum WorkStatus {
+  JAM       // Initial state - raw, unreviewed
+  PLATE     // Elevated - curator reviewed, notable
+  CANON     // Permanent - irreversibly canonized
+}
+
+enum EdgeType {
+  FORK      // Direct fork/remix of parent
+  MERGE     // Combination of multiple parents
+  DERIVED   // Loosely inspired by/derived from
+}
+
+enum ContributionRole {
+  VOCAL     // Vocals, singing, spoken word
+  BEAT      // Drums, percussion, rhythm programming
+  LYRIC     // Lyrics, written word
+  SOUND     // Sound design, synthesis, production
+  CURATION  // Curatorial contribution (selection, sequencing)
+  AI_ASSIST // AI-assisted generation (must be disclosed)
+}
+
+// ============================================
+// AUTH MODELS (NextAuth compatible)
+// ============================================
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================
+// USER MODEL
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(VIEWER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // NextAuth relations
+  accounts Account[]
+  sessions Session[]
+
+  // CHORA relations
+  contributions    Contribution[]
+  promotionEvents  PromotionEvent[]   @relation("SignedBy")
+  curatedLists     CuratedList[]
+  canonLockedWorks Work[]             @relation("CanonLockedBy")
+  createdWorks     Work[]             @relation("CreatedBy")
+}
+
+// ============================================
+// CORE DOMAIN MODELS
+// ============================================
+
+model Work {
+  id          String     @id @default(cuid())
+  slug        String     @unique // Human-readable slug (e.g., "midnight-echoes-a3b2")
+  title       String
+  description String?    @db.Text
+  status      WorkStatus @default(JAM)
+  audioUrl    String?    // S3 URL for audio file
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Canon lock fields - once CANON, these are set and work cannot change
+  canonLockedAt       DateTime?
+  canonLockedByUserId String?
+  canonLockedBy       User?     @relation("CanonLockedBy", fields: [canonLockedByUserId], references: [id])
+
+  // Creator tracking
+  createdByUserId String?
+  createdBy       User?   @relation("CreatedBy", fields: [createdByUserId], references: [id])
+
+  // Relations
+  contributions   Contribution[]
+  promotionEvents PromotionEvent[]
+  curatedListItems CuratedListItem[]
+
+  // Lineage relations (many-to-many via WorkEdge)
+  parentEdges  WorkEdge[] @relation("ToWork")   // Edges pointing TO this work (parents)
+  childEdges   WorkEdge[] @relation("FromWork") // Edges pointing FROM this work (children)
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([canonLockedAt])
+}
+
+model WorkEdge {
+  id        String   @id @default(cuid())
+  type      EdgeType
+  createdAt DateTime @default(now())
+
+  // From work -> To work (fromWork is parent, toWork is child)
+  fromWorkId String
+  fromWork   Work   @relation("FromWork", fields: [fromWorkId], references: [id], onDelete: Cascade)
+
+  toWorkId String
+  toWork   Work   @relation("ToWork", fields: [toWorkId], references: [id], onDelete: Cascade)
+
+  @@unique([fromWorkId, toWorkId])
+  @@index([fromWorkId])
+  @@index([toWorkId])
+}
+
+model Contribution {
+  id          String           @id @default(cuid())
+  role        ContributionRole
+  displayName String           // Visible credit name
+  notes       String?          @db.Text
+  createdAt   DateTime         @default(now())
+
+  // Work relation
+  workId String
+  work   Work   @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  // User relation (nullable - allows crediting non-users)
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  @@index([workId])
+  @@index([userId])
+}
+
+model PromotionEvent {
+  id            String     @id @default(cuid())
+  fromStatus    WorkStatus
+  toStatus      WorkStatus
+  justification String     @db.Text // Required - why this work deserves promotion
+  createdAt     DateTime   @default(now())
+
+  // Work being promoted
+  workId String
+  work   Work   @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  // Curator who signed the promotion (required - no anonymous promotions)
+  signedByUserId      String
+  signedByDisplayName String // Captured at time of signing
+  signedBy            User   @relation("SignedBy", fields: [signedByUserId], references: [id])
+
+  @@index([workId])
+  @@index([signedByUserId])
+  @@index([createdAt])
+}
+
+// ============================================
+// CURATED LISTS
+// ============================================
+
+model CuratedList {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Curator who created the list
+  curatorUserId String
+  curator       User   @relation(fields: [curatorUserId], references: [id])
+
+  // Items in the list
+  items CuratedListItem[]
+
+  @@index([curatorUserId])
+}
+
+model CuratedListItem {
+  id         String   @id @default(cuid())
+  orderIndex Int      // For manual ordering
+  createdAt  DateTime @default(now())
+
+  // List relation
+  listId String
+  list   CuratedList @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  // Work relation
+  workId String
+  work   Work   @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, workId])
+  @@index([listId])
+  @@index([workId])
+}
