@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useSession, signIn, signOut } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
-import { canCreate, canCurate, canManageRoles } from '@/lib/rbac'
+import { canCreate, canCurate, canManageRoles } from '@/lib/roles'
 
 export function Header() {
   const { data: session, status } = useSession()
