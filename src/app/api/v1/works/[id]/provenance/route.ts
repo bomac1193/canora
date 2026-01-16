@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import {
   withApiKeyAuthParams,
   API_SCOPES,
@@ -19,7 +20,7 @@ import { type CTADMetadata } from "@/lib/ctad";
 async function handlePost(
   request: NextRequest,
   _context: ApiAuthContext,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<Record<string, string>> }
 ): Promise<NextResponse> {
   try {
     const { id: workId } = await params;
@@ -132,7 +133,7 @@ async function handlePost(
 
     // Update CTAD with provenance reference
     if (work.ctadMetadata) {
-      const ctad = work.ctadMetadata as CTADMetadata;
+      const ctad = work.ctadMetadata as unknown as CTADMetadata;
       const updatedAi = {
         ...ctad.ai,
         involved: true,
@@ -158,7 +159,7 @@ async function handlePost(
               generated: generatedAt,
               modified: new Date().toISOString(),
             },
-          } as unknown as Record<string, unknown>,
+          } as unknown as Prisma.InputJsonValue,
         },
       });
     }

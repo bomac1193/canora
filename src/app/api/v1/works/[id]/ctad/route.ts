@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import {
   withApiKeyAuthParams,
   API_SCOPES,
@@ -24,7 +25,7 @@ import {
 async function handlePost(
   request: NextRequest,
   _context: ApiAuthContext,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<Record<string, string>> }
 ): Promise<NextResponse> {
   try {
     const { id: workId } = await params;
@@ -61,7 +62,7 @@ async function handlePost(
     }
 
     // Get existing CTAD or create minimal one
-    const existingCTAD = work.ctadMetadata as CTADMetadata | null;
+    const existingCTAD = work.ctadMetadata as unknown as CTADMetadata | null;
     if (!existingCTAD) {
       return NextResponse.json(
         { error: "Work has no CTAD metadata to update" },
@@ -85,7 +86,7 @@ async function handlePost(
     await prisma.work.update({
       where: { id: workId },
       data: {
-        ctadMetadata: mergedCTAD as unknown as Record<string, unknown>,
+        ctadMetadata: mergedCTAD as unknown as Prisma.InputJsonValue,
       },
     });
 

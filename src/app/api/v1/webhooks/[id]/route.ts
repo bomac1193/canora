@@ -18,7 +18,7 @@ import {
 async function handleDelete(
   _request: NextRequest,
   context: ApiAuthContext,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<Record<string, string>> }
 ): Promise<NextResponse> {
   try {
     const { id } = await params;

@@ -13,7 +13,7 @@ import { prisma } from "@/lib/prisma";
  */
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<Record<string, string>> }
 ) {
   const authResult = await requireAuth();
   if (!authResult.authorized) {

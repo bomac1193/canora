@@ -20,7 +20,7 @@ import {
   validateCTAD,
 } from "@/lib/ctad";
 import { dispatchWebhook, WEBHOOK_EVENTS } from "@/lib/webhooks";
-import { WorkStatus } from "@prisma/client";
+import { WorkStatus, Prisma } from "@prisma/client";
 
 /**
  * GET /api/v1/works
@@ -162,7 +162,7 @@ async function handlePost(
         audioUrl,
         status: "JAM",
         ctadId: ctad.id.ctad,
-        ctadMetadata: ctad as unknown as Record<string, unknown>,
+        ctadMetadata: ctad as unknown as Prisma.InputJsonValue,
         createdByUserId: context.userId,
         // Create contributions
         contributions: contributions?.length > 0
@@ -212,7 +212,7 @@ async function handlePost(
     const finalCTAD = setCanoraId(ctad, work.id);
     await prisma.work.update({
       where: { id: work.id },
-      data: { ctadMetadata: finalCTAD as unknown as Record<string, unknown> },
+      data: { ctadMetadata: finalCTAD as unknown as Prisma.InputJsonValue },
     });
 
     // Create initial discovery signal

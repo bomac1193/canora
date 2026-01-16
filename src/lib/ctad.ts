@@ -6,6 +6,7 @@
 export * from "@/types/ctad";
 
 import { prisma } from "./prisma";
+import type { Prisma } from "@prisma/client";
 import {
   generateCTADId,
   type CTADMetadata,
@@ -56,7 +57,7 @@ export function buildCTADFromInput(input: {
 
   // Ensure at least one contributor
   if (contributors.length === 0) {
-    contributors.push({ name: "Unknown", role: "artist" as CTADContributorRole });
+    contributors.push({ name: "Unknown", role: "artist" as CTADContributorRole, share: undefined, userId: undefined });
   }
 
   const ctadId = generateCTADId();
@@ -243,7 +244,7 @@ export async function getCTADFromWork(
 
   if (!work?.ctadMetadata) return null;
 
-  return work.ctadMetadata as CTADMetadata;
+  return work.ctadMetadata as unknown as CTADMetadata;
 }
 
 /**
@@ -257,7 +258,7 @@ export async function updateWorkCTAD(
     where: { id: workId },
     data: {
       ctadId: ctad.id.ctad,
-      ctadMetadata: ctad as unknown as Record<string, unknown>,
+      ctadMetadata: ctad as unknown as Prisma.InputJsonValue,
     },
   });
 }
@@ -267,7 +268,7 @@ export async function updateWorkCTAD(
  */
 export function edgeTypeToCTADLineageType(
   edgeType: string
-): CTADMetadata["lineage"]["type"] {
+): NonNullable<CTADMetadata["lineage"]>["type"] {
   switch (edgeType) {
     case "FORK":
       return "remix";

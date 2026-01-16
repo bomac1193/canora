@@ -26,10 +26,11 @@ const VALID_SETTLEMENT_RULES = [
 async function handlePost(
   request: NextRequest,
   _context: ApiAuthContext,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<Record<string, string>> }
 ): Promise<NextResponse> {
   try {
-    const { id: workId } = await params;
+    const resolvedParams = await params;
+    const workId = resolvedParams.id;
     const body = await request.json();
     const { settlementRules } = body;
 

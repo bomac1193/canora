@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { PageContainer } from '@/components/layout/PageContainer'
@@ -12,10 +13,28 @@ const errorMessages: Record<string, string> = {
   Default: 'An error occurred during authentication.',
 }
 
-export default function AuthErrorPage() {
+function ErrorContent() {
   const searchParams = useSearchParams()
   const error = searchParams.get('error') || 'Default'
 
+  return (
+    <>
+      <p className="mt-4 text-secondary">
+        {errorMessages[error] || errorMessages.Default}
+      </p>
+      <div className="mt-8">
+        <Link href="/auth/signin">
+          <Button>Try Again</Button>
+        </Link>
+      </div>
+      <p className="mt-6 text-xs text-muted-foreground">
+        Error code: {error}
+      </p>
+    </>
+  )
+}
+
+export default function AuthErrorPage() {
   return (
     <PageContainer className="flex min-h-[60vh] items-center justify-center">
       <div className="w-full max-w-md text-center">
@@ -23,17 +42,9 @@ export default function AuthErrorPage() {
         <h1 className="font-serif text-3xl font-semibold">
           Authentication Error
         </h1>
-        <p className="mt-4 text-secondary">
-          {errorMessages[error] || errorMessages.Default}
-        </p>
-        <div className="mt-8">
-          <Link href="/auth/signin">
-            <Button>Try Again</Button>
-          </Link>
-        </div>
-        <p className="mt-6 text-xs text-muted-foreground">
-          Error code: {error}
-        </p>
+        <Suspense fallback={<p className="mt-4 text-secondary">Loading...</p>}>
+          <ErrorContent />
+        </Suspense>
       </div>
     </PageContainer>
   )
