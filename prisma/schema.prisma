@@ -104,6 +104,10 @@ model User {
   curatedLists     CuratedList[]
   canonLockedWorks Work[]             @relation("CanonLockedBy")
   createdWorks     Work[]             @relation("CreatedBy")
+
+  // API & Webhook relations
+  apiKeys              ApiKey[]
+  webhookSubscriptions WebhookSubscription[]
 }
 
 // ============================================
@@ -138,9 +142,25 @@ model Work {
   parentEdges  WorkEdge[] @relation("ToWork")   // Edges pointing TO this work (parents)
   childEdges   WorkEdge[] @relation("FromWork") // Edges pointing FROM this work (children)
 
+  // Discovery & signals (SELECTR integration)
+  discoverySignal DiscoverySignal?
+  selectrSignals  SelectrSignal[]
+
+  // CTAD metadata (Creative Track Attribution Data)
+  ctadId       String? @unique // Universal CTAD identifier
+  ctadMetadata Json?           // Full CTAD schema
+
+  // O8 Provenance (AI generation proof)
+  o8Provenance O8Provenance?
+
+  // ISSUANCE integration
+  issuanceId          String?
+  issuanceFingerprint String?
+
   @@index([status])
   @@index([createdAt])
   @@index([canonLockedAt])
+  @@index([ctadId])
 }
 
 model WorkEdge {
@@ -237,4 +257,143 @@ model CuratedListItem {
   @@unique([listId, workId])
   @@index([listId])
   @@index([workId])
+}
+
+// ============================================
+// API KEY MANAGEMENT
+// ============================================
+
+model ApiKey {
+  id        String    @id @default(cuid())
+  name      String
+  key       String    @unique
+  hashedKey String
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scopes    String[]
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([key])
+  @@index([userId])
+}
+
+// ============================================
+// WEBHOOK SUBSCRIPTIONS
+// ============================================
+
+model WebhookSubscription {
+  id        String   @id @default(cuid())
+  url       String
+  events    String[]
+  secret    String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  active    Boolean  @default(true)
+  failures  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([active])
+}
+
+// ============================================
+// DISCOVERY SIGNALS (Etherfeed Integration)
+// ============================================
+
+model DiscoverySignal {
+  id           String   @id @default(cuid())
+  workId       String   @unique
+  work         Work     @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  // Scoring
+  shadowScore  Float    @default(10)  // 0-10, higher = rarer/underground
+  noveltyScore Float    @default(5)   // 0-10, higher = more unique
+
+  // Engagement metrics (from SELECTR)
+  playCount    Int      @default(0)
+  voteCount    Int      @default(0)
+  battleCount  Int      @default(0)
+  winCount     Int      @default(0)
+  dropCount    Int      @default(0)   // Times dropped by curators
+
+  // Audio analysis
+  embedding    Float[]               // CLAP embedding (512 dims)
+  emotionAxes  Json?                 // { ecstatic, yearning, corrupted, lucid, divine, feral }
+  bpm          Float?
+  key          String?
+  energy       Float?
+
+  computedAt   DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([shadowScore])
+  @@index([noveltyScore])
+  @@index([voteCount])
+}
+
+// ============================================
+// SELECTR SIGNALS (Game Layer Integration)
+// ============================================
+
+model SelectrSignal {
+  id         String   @id @default(cuid())
+  workId     String
+  work       Work     @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  source     String   @default("selectr")
+  signalType String   // "vote", "drop", "battle_win", "battle_loss", "mission_complete"
+  userId     String?  // SELECTR user ID (may not map to CANORA user)
+  metadata   Json?    // Additional signal data
+
+  createdAt  DateTime @default(now())
+
+  @@index([workId])
+  @@index([signalType])
+  @@index([createdAt])
+}
+
+// ============================================
+// O8 PROVENANCE (AI Generation Proof)
+// ============================================
+
+model O8Provenance {
+  id                  String   @id @default(cuid())
+  workId              String   @unique
+  work                Work     @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  // Generation details
+  platform            String   // "suno", "udio", "other"
+  platformVersion     String?
+  generatedAt         DateTime
+  prompt              String   @db.Text
+  negativePrompt      String?  @db.Text
+  parameters          Json?    // model, seed, duration, style, etc.
+
+  // Output info captured at generation
+  originalAudioUrl    String?
+  originalTitle       String?
+
+  // Creator identity
+  creatorPlatformId   String   // User ID on Suno/Udio
+  creatorPlatformName String?
+
+  // Cryptographic verification
+  signatureAlgorithm  String   @default("ed25519")
+  publicKey           String
+  signature           String   @db.Text
+  signedAt            DateTime
+
+  // Verification status
+  verified            Boolean  @default(false)
+  verifiedAt          DateTime?
+  verificationError   String?
+
+  createdAt           DateTime @default(now())
+
+  @@index([platform])
+  @@index([generatedAt])
+  @@index([verified])
 }
