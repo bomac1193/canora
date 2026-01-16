@@ -1,36 +1,33 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Canora
 
-## Getting Started
+**Remember everything. Choose the few.**
 
-First, run the development server:
+## Diagnosis
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+We live in an age of infinite AI-generated content. Anyone can produce endless creative output, but this abundance creates a crisis: how do we distinguish signal from noise? How do we preserve creative lineage without drowning in an undifferentiated archive?
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The core problem Canora addresses is **curation at scale**. Without rigorous, human-driven selection, archives become landfills. Works of genuine cultural significance get buried alongside ephemeral content. The full genealogy of creative ideas—forks, remixes, derivations—risks being lost or ignored.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Guiding Policy
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Canora implements a **three-tiered curation pipeline with irreversible escalation**:
 
-## Learn More
+| Tier | Name | Description |
+|------|------|-------------|
+| 1 | **JAM** | Raw submissions. Anyone can contribute. Impermanent by default. |
+| 2 | **PLATE** | Curator-reviewed works deemed notable. Reversible promotion. |
+| 3 | **CANON** | Permanently preserved. Irreversible. A cultural commitment. |
 
-To learn more about Next.js, take a look at the following resources:
+The policy is simple: **most things should disappear; a few things should endure.** Promotion to Canon requires a signed justification from a curator and cannot be undone. This forces deliberate, accountable decision-making about what deserves permanence.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Strategy
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 1. Full Lineage Preservation
 
-## Deploy on Vercel
+Every creative work maintains its genealogy. Forks, merges, and derivations are tracked in a directed graph, allowing anyone to trace the evolution of ideas. Attribution is explicit—contributors are credited by role (vocal, beat, lyric, AI assist, etc.), and AI involvement must be disclosed.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 2. Curator Accountability
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Only designated curators can promote works through the pipeline. Each promotion requires written justification (minimum 10 characters) that becomes a permanent, immutable record. Canon promotion triggers a two-step confirmation with explicit warnings. Curators are permanently identified with their decisions—there is no anonymous gatekeeping.
+
+This combination ensures the archive grows responsibly: everything is remembered, but only the few are chosen.
