@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireCurator } from '@/lib/rbac'
 import { WorkStatus } from '@prisma/client'
+import { dispatchWebhook, WEBHOOK_EVENTS } from '@/lib/webhooks'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -96,6 +97,30 @@ export async function POST(request: NextRequest, { params }: Params) {
         },
       }),
     ])
+
+    // Dispatch webhook
+    const webhookEvent = nextStatus === 'CANON'
+      ? WEBHOOK_EVENTS.WORK_CANONIZED
+      : WEBHOOK_EVENTS.WORK_PROMOTED
+
+    await dispatchWebhook(webhookEvent, {
+      work: {
+        id: updatedWork.id,
+        slug: updatedWork.slug,
+        title: updatedWork.title,
+        status: updatedWork.status,
+        ctad: updatedWork.ctadMetadata,
+      },
+      fromStatus: work.status,
+      toStatus: nextStatus,
+      curatorJustification: justification.trim(),
+      promotionEvent: {
+        id: promotionEvent.id,
+        signedBy: promotionEvent.signedBy,
+        signedByDisplayName: promotionEvent.signedByDisplayName,
+        createdAt: promotionEvent.createdAt.toISOString(),
+      },
+    })
 
     return NextResponse.json({
       data: {
