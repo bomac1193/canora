@@ -18,8 +18,9 @@ import { updateDiscoverySignal, type EmotionVector } from "./discovery";
 // CONFIGURATION
 // ============================================
 
-const ETHERFEED_URL = process.env.ETHERFEED_URL || "http://localhost:8000";
+const ETHERFEED_URL = process.env.ETHERFEED_URL || "";
 const ETHERFEED_TIMEOUT = 30000; // 30s for audio analysis
+const ETHERFEED_ENABLED = Boolean(ETHERFEED_URL && ETHERFEED_URL !== "disabled");
 
 // ============================================
 // TYPES
@@ -265,8 +266,15 @@ export const etherfeed = new EtherfeedClient();
 
 /**
  * Analyze a work and store results in CANORA
+ * Returns null if Etherfeed is disabled (graceful skip)
  */
-export async function analyzeWork(workId: string): Promise<void> {
+export async function analyzeWork(workId: string): Promise<{ jobId: string } | null> {
+  // Skip if Etherfeed is disabled
+  if (!ETHERFEED_ENABLED) {
+    console.log(`[Etherfeed] Skipping analysis for ${workId} - Etherfeed disabled`);
+    return null;
+  }
+
   // Get work
   const work = await prisma.work.findUnique({
     where: { id: workId },
@@ -302,6 +310,8 @@ export async function analyzeWork(workId: string): Promise<void> {
         startedAt: new Date(),
       },
     });
+
+    return { jobId };
   } catch (error) {
     // Mark job as failed
     await prisma.analysisJob.update({
@@ -433,9 +443,19 @@ export async function syncUMAPCoordinates(): Promise<number> {
 }
 
 /**
- * Check if Etherfeed is available
+ * Check if Etherfeed is enabled in configuration
+ */
+export function isEtherfeedEnabled(): boolean {
+  return ETHERFEED_ENABLED;
+}
+
+/**
+ * Check if Etherfeed is available (enabled and healthy)
  */
 export async function isEtherfeedAvailable(): Promise<boolean> {
+  if (!ETHERFEED_ENABLED) {
+    return false;
+  }
   try {
     const health = await etherfeed.health();
     return health.status === "healthy";
