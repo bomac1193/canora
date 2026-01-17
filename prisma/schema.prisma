@@ -145,6 +145,7 @@ model Work {
   // Discovery & signals (SELECTR integration)
   discoverySignal DiscoverySignal?
   selectrSignals  SelectrSignal[]
+  audioAnalysis   AudioAnalysis?
 
   // CTAD metadata (Creative Track Attribution Data)
   ctadId       String? @unique // Universal CTAD identifier
@@ -308,9 +309,10 @@ model DiscoverySignal {
   workId       String   @unique
   work         Work     @relation(fields: [workId], references: [id], onDelete: Cascade)
 
-  // Scoring
-  shadowScore  Float    @default(10)  // 0-10, higher = rarer/underground
-  noveltyScore Float    @default(5)   // 0-10, higher = more unique
+  // Scoring (0-1 normalized)
+  shadowScore  Float    @default(0.5)  // Higher = rarer/underground
+  noveltyScore Float    @default(0.5)  // Higher = more unique/experimental
+  decayScore   Float    @default(0.5)  // Recency decay factor
 
   // Engagement metrics (from SELECTR)
   playCount    Int      @default(0)
@@ -319,19 +321,39 @@ model DiscoverySignal {
   winCount     Int      @default(0)
   dropCount    Int      @default(0)   // Times dropped by curators
 
-  // Audio analysis
-  embedding    Float[]               // CLAP embedding (512 dims)
-  emotionAxes  Json?                 // { ecstatic, yearning, corrupted, lucid, divine, feral }
-  bpm          Float?
-  key          String?
-  energy       Float?
+  // Audio embedding (512 dims from Etherfeed)
+  // Use raw SQL for pgvector similarity: SELECT * FROM ... ORDER BY embedding <-> $1
+  embedding    Float[]
 
-  computedAt   DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  // Emotion axes (Etherfeed 6-axis model)
+  ecstatic     Float?   // 0-1
+  yearning     Float?   // 0-1
+  corrupted    Float?   // 0-1
+  lucid        Float?   // 0-1
+  divine       Float?   // 0-1
+  feral        Float?   // 0-1
+
+  // Audio features (from Etherfeed Essentia analysis)
+  bpm          Float?
+  key          String?              // e.g., "C major", "A minor"
+  energy       Float?               // 0-1
+  valence      Float?               // 0-1 (musical positiveness)
+  danceability Float?               // 0-1
+
+  // UMAP coordinates for vibe map visualization
+  umapX        Float?
+  umapY        Float?
+
+  // Analysis metadata
+  analysisSource  String?           // "etherfeed", "manual", "import"
+  analysisVersion String?           // Version of Etherfeed used
+  computedAt      DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([shadowScore])
   @@index([noveltyScore])
   @@index([voteCount])
+  @@index([bpm])
 }
 
 // ============================================
@@ -353,6 +375,71 @@ model SelectrSignal {
   @@index([workId])
   @@index([signalType])
   @@index([createdAt])
+}
+
+// ============================================
+// AUDIO ANALYSIS (Full Etherfeed Results)
+// ============================================
+
+model AudioAnalysis {
+  id           String   @id @default(cuid())
+  workId       String   @unique
+  work         Work     @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  // Source file info
+  audioUrl     String
+  audioHash    String?              // SHA256 of audio file for deduplication
+  duration     Float?               // Seconds
+  sampleRate   Int?
+  channels     Int?
+
+  // Full Etherfeed analysis (JSON blob)
+  // Includes: spectral features, rhythm, tonal, loudness, timbre, high-level
+  essentia     Json?
+
+  // Raw embedding (may be larger than what we store in DiscoverySignal)
+  fullEmbedding Float[]
+
+  // Processing metadata
+  status       String   @default("pending")  // pending, processing, completed, failed
+  error        String?
+  processingMs Int?                 // How long analysis took
+  etherfeedVersion String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([status])
+  @@index([audioHash])
+}
+
+// ============================================
+// ANALYSIS QUEUE (Etherfeed Job Tracking)
+// ============================================
+
+model AnalysisJob {
+  id           String   @id @default(cuid())
+  workId       String
+  audioUrl     String
+
+  // Job status
+  status       String   @default("queued")  // queued, processing, completed, failed
+  priority     Int      @default(0)         // Higher = process first
+  attempts     Int      @default(0)
+  maxAttempts  Int      @default(3)
+  error        String?
+
+  // Etherfeed response
+  etherfeedJobId String?             // Job ID from Etherfeed service
+  result       Json?                 // Full response from Etherfeed
+
+  // Timing
+  queuedAt     DateTime @default(now())
+  startedAt    DateTime?
+  completedAt  DateTime?
+
+  @@index([status, priority])
+  @@index([workId])
 }
 
 // ============================================
