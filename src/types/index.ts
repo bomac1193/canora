@@ -4,6 +4,7 @@ import type {
   WorkEdge,
   Contribution,
   PromotionEvent,
+  VisualTasteMemory,
   CuratedList,
   CuratedListItem,
   Role,
@@ -19,6 +20,7 @@ export type {
   WorkEdge,
   Contribution,
   PromotionEvent,
+  VisualTasteMemory,
   CuratedList,
   CuratedListItem
 }
@@ -33,6 +35,7 @@ export type WorkWithRelations = Work & {
   childEdges: (WorkEdge & { toWork: Pick<Work, 'id' | 'slug' | 'title' | 'status'> })[]
   canonLockedBy: Pick<User, 'id' | 'name'> | null
   createdBy: Pick<User, 'id' | 'name'> | null
+  tasteMemories: (VisualTasteMemory & { createdBy: Pick<User, 'id' | 'name'> | null })[]
 }
 
 export type CuratedListWithItems = CuratedList & {

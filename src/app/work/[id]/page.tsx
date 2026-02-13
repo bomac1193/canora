@@ -4,6 +4,7 @@ import { PageContainer, Section } from '@/components/layout/PageContainer'
 import { StatusBadge } from '@/components/work/StatusBadge'
 import { ContributorList } from '@/components/work/ContributorList'
 import { PromotionRecord } from '@/components/work/PromotionRecord'
+import { TasteMemoryPanel } from '@/components/work/TasteMemoryPanel'
 import { LineageGraph } from '@/components/lineage/LineageGraph'
 import { formatDate, formatWorkId } from '@/lib/utils'
 import { LineageGraph as LineageGraphType } from '@/types'
@@ -137,6 +138,15 @@ export default async function WorkPage({ params }: Params) {
       createdBy: {
         select: { id: true, name: true },
       },
+      tasteMemories: {
+        include: {
+          createdBy: {
+            select: { id: true, name: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 100,
+      },
     },
   })
 
@@ -196,9 +206,24 @@ export default async function WorkPage({ params }: Params) {
         <PromotionRecord events={work.promotionEvents} />
       </Section>
 
+      {/* Visual Taste DNA */}
+      <Section number={4} title="Visual Taste DNA">
+        <TasteMemoryPanel
+          workId={work.id}
+          initialMemories={work.tasteMemories.map((memory) => ({
+            id: memory.id,
+            verdict: memory.verdict as 'APPROVE' | 'REJECT' | 'HOLD',
+            reason: memory.reason,
+            tags: memory.tags,
+            createdAt: memory.createdAt.toISOString(),
+            createdBy: memory.createdBy,
+          }))}
+        />
+      </Section>
+
       {/* Audio (if exists) */}
       {work.audioUrl && (
-        <Section number={4} title="Audio">
+        <Section number={5} title="Audio">
           <div className="border border-divider bg-muted/30 p-6">
             <audio controls className="w-full" src={work.audioUrl}>
               Your browser does not support the audio element.

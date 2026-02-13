@@ -49,6 +49,15 @@ export async function GET(request: NextRequest, { params }: Params) {
       createdBy: {
         select: { id: true, name: true },
       },
+      tasteMemories: {
+        include: {
+          createdBy: {
+            select: { id: true, name: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+      },
     },
   })
 

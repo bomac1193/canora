@@ -108,6 +108,7 @@ model User {
   // API & Webhook relations
   apiKeys              ApiKey[]
   webhookSubscriptions WebhookSubscription[]
+  tasteMemories        VisualTasteMemory[]
 }
 
 // ============================================
@@ -158,10 +159,32 @@ model Work {
   issuanceId          String?
   issuanceFingerprint String?
 
+  // Visual Taste DNA memory (approval/rejection signals)
+  tasteMemories VisualTasteMemory[]
+
   @@index([status])
   @@index([createdAt])
   @@index([canonLockedAt])
   @@index([ctadId])
+}
+
+model VisualTasteMemory {
+  id        String   @id @default(cuid())
+  verdict   String   // APPROVE | REJECT | HOLD
+  reason    String?  @db.Text
+  tags      String[]
+  createdAt DateTime @default(now())
+
+  // Work relation
+  workId String
+  work   Work   @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  // Who logged this taste signal
+  createdByUserId String?
+  createdBy       User?   @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([workId, createdAt])
+  @@index([verdict, createdAt])
 }
 
 model WorkEdge {

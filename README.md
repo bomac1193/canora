@@ -64,6 +64,7 @@ CANORA addresses the crisis of abundance in AI-generated music by implementing a
 | `/api/v1/canon/[id]/graduate` | Graduate to ISSUANCE |
 | `/api/v1/discover` | Emotion-based discovery |
 | `/api/v1/discover/shadow-dive` | Underground track discovery |
+| `/api/v1/taste-dna` | Aggregated approval/rejection taste memory |
 
 ### APIs Consumed
 
@@ -202,6 +203,14 @@ npm run dev
 | GET | `/api/v1/discover/shadow-dive` | Find underground tracks |
 | GET | `/api/v1/discover/similar/[id]` | Find similar tracks |
 | GET | `/api/v1/discover/vibe-map` | Get UMAP coordinates |
+
+### Visual Taste DNA
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/works/[id]/taste` | List taste signals for one work |
+| POST | `/api/works/[id]/taste` | Add APPROVE/REJECT/HOLD taste signal |
+| GET | `/api/v1/taste-dna` | Get global reject reasons/tags summary |
 
 ### Canon
 
