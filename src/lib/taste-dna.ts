@@ -21,8 +21,28 @@ export interface TasteDnaSummary {
   }>
 }
 
+export interface TastePromptGuardrails {
+  negativeTags: string[]
+  avoidThemes: string[]
+  promptGuardrails: string
+}
+
 export async function getTasteDnaSummary(limit = 8): Promise<TasteDnaSummary> {
+  return getTasteDnaSummaryForUser({ limit })
+}
+
+export async function getTasteDnaSummaryForUser(opts: {
+  userId?: string
+  limit?: number
+}): Promise<TasteDnaSummary> {
+  const limit = opts.limit ?? 8
+
   const memories = await prisma.visualTasteMemory.findMany({
+    where: opts.userId
+      ? {
+          createdByUserId: opts.userId,
+        }
+      : undefined,
     orderBy: { createdAt: 'desc' },
     include: {
       work: {
@@ -87,5 +107,36 @@ export async function getTasteDnaSummary(limit = 8): Promise<TasteDnaSummary> {
     topRejectReasons,
     topRejectTags,
     recentRejectMemory,
+  }
+}
+
+export function buildTastePromptGuardrails(
+  summary: TasteDnaSummary,
+  opts: { maxTags?: number; maxThemes?: number } = {}
+): TastePromptGuardrails {
+  const maxTags = opts.maxTags ?? 8
+  const maxThemes = opts.maxThemes ?? 6
+
+  const negativeTags = summary.topRejectTags
+    .slice(0, maxTags)
+    .map((item) => item.tag)
+
+  const avoidThemes = summary.topRejectReasons
+    .slice(0, maxThemes)
+    .map((item) => item.reason)
+
+  const clauses: string[] = []
+  if (negativeTags.length > 0) {
+    clauses.push(`Avoid these traits: ${negativeTags.join(', ')}`)
+  }
+  if (avoidThemes.length > 0) {
+    clauses.push(`Do not produce outcomes with: ${avoidThemes.join('; ')}`)
+  }
+  clauses.push('Prioritize clarity, identity consistency, and premium finish.')
+
+  return {
+    negativeTags,
+    avoidThemes,
+    promptGuardrails: clauses.join(' '),
   }
 }

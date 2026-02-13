@@ -33,6 +33,11 @@ export default function CreateWorkPage() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [contributorRole, setContributorRole] = useState<ContributionRole>('SOUND')
+  const [tasteGuardrails, setTasteGuardrails] = useState('')
+  const [tasteSummary, setTasteSummary] = useState<{
+    totalSignals: number
+    rejects: number
+  } | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -44,6 +49,30 @@ export default function CreateWorkPage() {
       router.push('/')
     }
   }, [session, status, router])
+
+  useEffect(() => {
+    async function fetchTasteGuardrails() {
+      if (!session?.user) return
+
+      try {
+        const res = await fetch('/api/taste-dna/guardrails')
+        if (!res.ok) return
+        const json = await res.json()
+        const payload = json.data
+        if (!payload?.guardrails?.promptGuardrails) return
+
+        setTasteGuardrails(payload.guardrails.promptGuardrails)
+        setTasteSummary({
+          totalSignals: payload.summary?.totalSignals || 0,
+          rejects: payload.summary?.verdictCounts?.REJECT || 0,
+        })
+      } catch {
+        // Non-blocking: work creation must continue without Taste DNA.
+      }
+    }
+
+    fetchTasteGuardrails()
+  }, [session?.user])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -100,6 +129,35 @@ export default function CreateWorkPage() {
 
       <Section number={1} title="Work Details">
         <form onSubmit={handleSubmit} className="max-w-xl space-y-6">
+          {tasteGuardrails ? (
+            <div className="space-y-2 border border-divider bg-muted/20 p-4">
+              <p className="font-mono text-xs text-secondary">Your Taste DNA Guardrails</p>
+              <p className="text-xs text-muted-foreground">
+                Learned from your profile signals ({tasteSummary?.totalSignals || 0} total, {tasteSummary?.rejects || 0} rejects)
+              </p>
+              <Textarea
+                value={tasteGuardrails}
+                readOnly
+                className="min-h-20 border-divider bg-muted/30 text-xs"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (!description.trim()) {
+                    setDescription(tasteGuardrails)
+                    return
+                  }
+                  if (description.includes(tasteGuardrails)) return
+                  setDescription(`${description.trim()}\n\nTaste DNA guardrails: ${tasteGuardrails}`)
+                }}
+              >
+                Apply to Description
+              </Button>
+            </div>
+          ) : null}
+
           {/* Title */}
           <div className="space-y-2">
             <Label htmlFor="title">
